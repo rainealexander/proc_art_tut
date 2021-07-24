@@ -4,6 +4,8 @@
 
 // ------ Global Parameters ------ [ope]
 
+window.stopDrawing = false;
+
 var shadowColor = '#010101';
 var shadowOffsetX = 10;
 var shadowOffsetY = 8;
@@ -37,29 +39,23 @@ function drawStuff() {
   var point, height, width, color;
   var drawn = 0;
 
-  var drawFunc = function (stop) {
-    var shadowFlag = false;
-    if (!stop) {
+  var drawFunc = function () {
+    var shadowFlag = true;
+    if (!window.stopDrawing) {
       point = randomCoordsInCanvas();
       height = randomInRange(minSize, maxHeight);
       width = randomInRange(minSize, maxWidth);
       color = getRGBHex();
       console.log('color: ', color);
-      // call random drawing function from array
-      var index;
-      drawingFunctions[Math.floor(Math.random() * drawingFunctions.length)](point, height, width, color);
+      var functionIndex = Math.floor(Math.random() * 5);
+      drawingFunctions[functionIndex](point, height, width, color, shadowFlag);
       drawn++;
     }
   }
   setInterval(function() {
     drawFunc();
-  }, 250);
+  }, 50);
 }
-
-// start drawing on page load
-window.onload = function() {
-  drawStuff();
-};
 
 // --- end of main drawing function
 
@@ -129,7 +125,6 @@ function drawTriangle(point1, height, width, color, shadow = false, fill = true)
   }
 
   // draw stuff here
-
   ctx.beginPath();
   ctx.moveTo(point1.x, point1.y);
   ctx.lineTo(point1.x + width, point1.y + height);
@@ -162,24 +157,23 @@ function drawNoodle(point, height, width, color, shadow = false, fill = false) {
 
   var quarterDistance = getDistance(startPoint, quarterPoint);
   var controlDistance = Math.floor(Math.sqrt(Math.pow(quarterDistance, 2) / 2));
-  var controlPoint1 = findNewPoint(startPoint, controlDistance, 45);
+  var controlPoint1 = findNewPoint(startPoint, controlDistance, 90);
   var controlPoint2 = findNewPoint(quarterPoint, controlDistance, 315);
   var controlPoint3 = findNewPoint(midpoint, controlDistance, -315);
-  var controlPoint4 = findNewPoint(quarterPoint2, controlDistance, -45);
+  var controlPoint4 = findNewPoint(quarterPoint2, controlDistance, -90);
   var curveData = {startPoint, quarterPoint, midpoint, controlPoint1, controlPoint2, controlDistance};
   console.log('Curvedata', curveData);
 
 
   ctx.strokeStyle = color;
   ctx.lineWidth = 4;
-  // first half
 
+  // first half
   ctx.beginPath();
   ctx.moveTo(startPoint.x, startPoint.y);
   ctx.bezierCurveTo(controlPoint1.x, controlPoint1.y, controlPoint2.x, controlPoint2.y, midpoint.x, midpoint.y);
-  //ctx.stroke();
+
   // second half
-  //ctx.beginPath();
   ctx.moveTo(midpoint.x, midpoint.y);
   ctx.bezierCurveTo(controlPoint3.x, controlPoint3.y, controlPoint4.x, controlPoint4.y, endPoint.x, endPoint.y);
   ctx.stroke();
@@ -214,16 +208,12 @@ function resetShadow() {
 
 // returns a number in range 0-255
 function randomRGBVal() {
-
   return Math.floor(randomInRange(0, 255));
 }
 
 // returns an array with three random RGB values
 function getRGBTriplet() {
-
-  return [randomRGBVal(),
-    randomRGBVal(),
-    randomRGBVal()];
+  return [randomRGBVal(), randomRGBVal(), randomRGBVal()];
 }
 
 function getRGBHex(colorArray) {
@@ -232,6 +222,7 @@ function getRGBHex(colorArray) {
   }
   return '#' + valToHex(colorArray[0]) + valToHex(colorArray[1]) + valToHex(colorArray[2]);
 }
+
 
 function valToHex(num) {
   var hex = num.toString(16);
@@ -287,3 +278,37 @@ function findNewPoint(point, dist, angle) {
 function randomInRange(min, max) {
   return Math.random() * (max - min + 1) + min;
 }
+
+// reset canvas for fresh drawing
+function resetCanvas() {
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+}
+
+// ==================================
+// |        Event Handlers          |
+// ==================================
+
+var refreshBtn = document.getElementById('refresh');
+var stopBtn = document.getElementById('stopDrawing');
+
+stopBtn.addEventListener('click', function() {
+  window.stopDrawing = !window.stopDrawing;
+  if (window.stopDrawing) {
+    stopBtn.innerHTML = 'Start Drawing';
+  } else {
+    stopBtn.innerHTML = 'Stop Drawing';
+  }
+});
+
+refreshBtn.addEventListener('click', function() {
+  window.stopDrawing = true;
+  resetCanvas();
+})
+
+// start drawing on page load
+window.onload = function() {
+  resetCanvas();
+  drawStuff();
+};
